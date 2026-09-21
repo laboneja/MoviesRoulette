@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Función al azar — ruleta de películas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --curtain:#1B0E13;
+    --curtain-2:#2A1319;
+    --velvet:#7A1B2B;
+    --velvet-dark:#521220;
+    --bulb:#F0B429;
+    --bulb-dim:#6E511B;
+    --cream:#F4E9D7;
+    --cream-dim:#BFAE98;
+    --ink:#231317;
+    --radius:3px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(120% 70% at 50% -10%, #3A1A22 0%, transparent 60%),
+      repeating-linear-gradient(90deg, var(--curtain) 0 38px, var(--curtain-2) 38px 76px);
+    color:var(--cream);
+    font-family:"Spectral", Georgia, "Times New Roman", serif;
+    font-size:16px;
+    line-height:1.6;
+    min-height:100vh;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:28px 20px 64px}
+
+  /* ---------- marquesina ---------- */
+  header.marquee{
+    border:2px solid var(--bulb-dim);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg, rgba(240,180,41,.09), rgba(0,0,0,.25));
+    padding:18px 20px 16px;
+    display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;
+  }
+  h1{
+    font-family:"Oswald", "Arial Narrow", Impact, sans-serif;
+    font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    font-size:clamp(28px,6vw,46px);line-height:.95;margin:0;
+    color:var(--bulb);
+    text-shadow:0 0 18px rgba(240,180,41,.35);
+  }
+  h1 span{display:block;font-size:.34em;font-weight:400;letter-spacing:.24em;color:var(--cream-dim);text-shadow:none;margin-top:8px}
+  .tally{font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.1em;color:var(--cream-dim);text-align:right}
+  .tally b{color:var(--cream);font-weight:500}
+
+  /* ---------- taquilla (setup) ---------- */
+  .booth{
+    margin-top:18px;border:1px solid rgba(244,233,215,.18);border-radius:var(--radius);
+    background:rgba(0,0,0,.28);
+  }
+  .booth > summary{
+    cursor:pointer;padding:14px 18px;list-style:none;
+    font-family:"Oswald",sans-serif;letter-spacing:.08em;font-size:15px;color:var(--cream);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  .booth > summary::-webkit-details-marker{display:none}
+  .booth > summary::after{content:"+";color:var(--bulb);font-size:22px;line-height:1}
+  .booth[open] > summary::after{content:"–"}
+  .booth-body{padding:4px 18px 20px;border-top:1px solid rgba(244,233,215,.12)}
+  .steps{margin:0;padding:0;list-style:none}
+  .steps li{padding:16px 0;border-bottom:1px dashed rgba(244,233,215,.14)}
+  .steps li:last-child{border-bottom:0;padding-bottom:0}
+  .steps h2{
+    font-family:"Oswald",sans-serif;font-weight:500;font-size:16px;letter-spacing:.04em;
+    margin:0 0 6px;color:var(--bulb);
+  }
+  .steps p{margin:0 0 10px;max-width:68ch;color:var(--cream-dim);font-size:15px}
+  a{color:var(--bulb);text-decoration:underline;text-underline-offset:3px}
+
+  .drop{
+    border:2px dashed rgba(240,180,41,.45);border-radius:var(--radius);
+    padding:22px;text-align:center;background:rgba(240,180,41,.05);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .drop.hot{background:rgba(240,180,41,.16);border-color:var(--bulb)}
+  .drop small{display:block;color:var(--cream-dim);margin-top:8px;font-size:13px}
+  input[type=file]{display:none}
+
+  .btn{
+    font-family:"Oswald",sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    font-size:14px;border:1px solid var(--bulb);background:transparent;color:var(--bulb);
+    padding:10px 18px;border-radius:var(--radius);cursor:pointer;
+  }
+  .btn:hover{background:rgba(240,180,41,.14)}
+  .btn.ghost{border-color:rgba(244,233,215,.35);color:var(--cream-dim)}
+  .btn.ghost:hover{background:rgba(244,233,215,.08)}
+  :focus-visible{outline:2px solid var(--bulb);outline-offset:3px}
+
+  textarea, input[type=text]{
+    width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(244,233,215,.25);
+    color:var(--cream);border-radius:var(--radius);padding:10px 12px;
+    font-family:"Spectral",serif;font-size:15px;
+  }
+  textarea{min-height:92px;resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .note{font-size:13px;color:var(--cream-dim)}
+  label.check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--cream-dim);cursor:pointer}
+
+  /* ---------- ruleta + resultado, lado a lado ---------- */
+  .stage{
+    margin:34px 0 0;display:flex;flex-wrap:wrap;gap:40px;
+    align-items:center;justify-content:center;
+  }
+  .wheel-holder{position:relative;width:min(420px,88vw);aspect-ratio:1/1;flex:0 0 auto}
+  canvas{width:100%;height:100%;display:block;border-radius:50%;
+    box-shadow:0 0 0 10px var(--velvet-dark), 0 0 0 12px rgba(240,180,41,.5), 0 22px 50px rgba(0,0,0,.6);}
+  .bulbs{position:absolute;inset:-26px;pointer-events:none}
+  .bulb{
+    position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px;border-radius:50%;
+    background:var(--bulb-dim);
+  }
+  .spinning .bulb{animation:chase 1s linear infinite}
+  @keyframes chase{0%,100%{background:var(--bulb-dim)}50%{background:var(--bulb);box-shadow:0 0 10px var(--bulb)}}
+  .needle{
+    position:absolute;left:50%;top:-30px;transform:translateX(-50%);
+    width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;
+    border-top:22px solid var(--cream);filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));
+  }
+  .spin{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:104px;height:104px;border-radius:50%;
+    display:grid;place-items:center;
+    font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.1em;font-size:16px;color:var(--ink);
+    background:var(--bulb);border:3px solid var(--curtain);cursor:pointer;
+    box-shadow:0 0 0 3px var(--bulb), 0 6px 14px rgba(0,0,0,.45);
+  }
+  .spin:hover{background:#F5C24B}
+  .spin:active{transform:translate(-50%,-50%) scale(.96)}
+  .spin[disabled]{opacity:.5;cursor:not-allowed}
+
+  /* ---------- ticket de resultado ---------- */
+  .ticket{
+    flex:1 1 400px;max-width:480px;background:var(--cream);color:var(--ink);
+    border-radius:var(--radius);display:grid;grid-template-columns:150px 1fr;
+    overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.55);align-self:center;
+  }
+  .ticket[hidden]{display:none}
+  .ticket .art{background:#D9CBB5;position:relative;min-height:258px}
+  .ticket .art img{width:100%;height:100%;object-fit:contain;display:block}
+  .ticket .art .fallback{
+    position:absolute;inset:0;display:grid;place-content:center;padding:14px;text-align:center;
+    font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.05em;
+    font-size:15px;line-height:1.25;color:#6B5A48;
+  }
+  .ticket .meta{padding:22px 24px;border-left:2px dashed rgba(35,19,23,.3);position:relative}
+  .ticket h3{
+    font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;
+    font-size:clamp(22px,4.4vw,32px);line-height:1.02;margin:6px 0 10px;letter-spacing:.01em;
+  }
+  .ticket .lb{
+    display:inline-block;margin:0 0 10px;color:#7A1B2B;font-size:14px;
+    text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;
+  }
+  .ticket .lb:hover{color:#4A0F1B}
+  .ticket .year{font-family:"Oswald",sans-serif;font-size:19px;letter-spacing:.14em;color:#7A1B2B}
+  .ticket .stub{font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.2em;color:#8A7460}
+  .ticket .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .ticket .btn{border-color:#7A1B2B;color:#7A1B2B}
+  .ticket .btn:hover{background:rgba(122,27,43,.1)}
+  .ticket .btn.ghost{border-color:rgba(35,19,23,.35);color:#5C4A3C}
+  .ticket .btn.ghost:hover{background:rgba(35,19,23,.07)}
+
+  .msg{margin:18px auto 0;max-width:640px;text-align:center;color:var(--cream-dim);font-size:15px}
+  footer{margin-top:44px;text-align:center;font-size:13px;color:rgba(244,233,215,.45)}
+
+  @media (max-width:720px){
+    .stage{flex-direction:column}
+    .ticket{width:100%;max-width:420px}
+  }
+  @media (max-width:560px){
+    .ticket{grid-template-columns:1fr}
+    .ticket .art{min-height:300px}
+    .ticket .meta{border-left:0;border-top:2px dashed rgba(35,19,23,.3)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .spinning .bulb{animation:none;background:var(--bulb)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="marquee">
+    <h1>Función al azar<span>ruleta de películas</span></h1>
+    <div class="tally" id="tally">Sin lista cargada</div>
+  </header>
+
+  <details class="booth" id="booth" open>
+    <summary>Taquilla: cargar la lista y las carátulas</summary>
+    <div class="booth-body">
+      <ol class="steps">
+        <li>
+          <h2>1. Exportá tu lista de Letterboxd</h2>
+          <p>Abrí la lista (o tu watchlist) en Letterboxd, bajá al final y usá <em>Export this list</em>. Te descarga un CSV. Letterboxd no permite leer listas directamente desde el navegador, así que el CSV es el camino que siempre funciona.</p>
+          <div class="drop" id="drop">
+            <button class="btn" id="pick">Elegir archivo CSV</button>
+            <input type="file" id="file" accept=".csv,text/csv">
+            <small>o arrastrá el CSV acá</small>
+          </div>
+          <div class="row"><span class="note" id="loadNote">Acepta el export de listas, watchlist o diario.</span></div>
+        </li>
+
+        <li>
+          <h2>2. O pegá los títulos a mano</h2>
+          <p>Un título por línea. Si agregás el año, mejoran las carátulas: <em>Stalker, 1979</em></p>
+          <textarea id="paste" placeholder="Chungking Express, 1994&#10;La ciénaga, 2001&#10;Paris, Texas"></textarea>
+          <div class="row"><button class="btn" id="usePaste">Usar estos títulos</button></div>
+        </li>
+
+        <li>
+          <h2>3. Carátulas (opcional)</h2>
+          <p>El CSV de Letterboxd no incluye imágenes. Pegá una clave gratuita de la API de TMDB y la ruleta busca la carátula de cada película. Se guarda solo en este navegador. Conseguila en <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> (API Key v3).</p>
+          <input type="text" id="tmdb" placeholder="Clave v3 de TMDB" autocomplete="off" spellcheck="false">
+          <div class="row">
+            <button class="btn" id="saveKey">Guardar clave</button>
+            <button class="btn ghost" id="clearKey">Borrar</button>
+            <span class="note" id="keyNote"></span>
+          </div>
+        </li>
+
+        <li>
+          <h2>4. Reglas de la sala</h2>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="noRepeat" checked> No repetir las que ya salieron</label>
+            <button class="btn ghost" id="resetSeen">Reiniciar descartadas</button>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="stage">
+    <div class="wheel-holder" id="holder">
+      <canvas id="wheel" width="840" height="840" role="img" aria-label="Ruleta de películas"></canvas>
+      <div class="bulbs" id="bulbs"></div>
+      <div class="needle"></div>
+      <button class="spin" id="spin" disabled>Girar</button>
+    </div>
+
+    <div class="ticket" id="ticket" hidden>
+      <div class="art" id="art"><div class="fallback" id="fallback">Sin carátula</div></div>
+      <div class="meta">
+        <div class="stub">Entrada N.º <span id="stubNo">1</span> · admite una persona</div>
+        <h3 id="title">—</h3>
+        <a class="lb" id="lbLink" href="#" target="_blank" rel="noopener" hidden>Ver en Letterboxd</a>
+        <div class="year" id="year"></div>
+        <div class="actions">
+          <button class="btn ghost" id="again">Otra película</button>
+          <button class="btn ghost" id="discard">Descartar esta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="msg" id="msg"></p>
+
+  <footer>Datos de las películas por TMDB. Este proyecto no está asociado a TMDB ni a Letterboxd.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SEG_MAX = 14;                 // cuántas candidatas entran a la rueda por giro
+  var movies = [];                  // {title, year, uri}
+  var seen = load("lb_seen", []);
+  var posterCache = load("lb_posters", {});
+  var apiKey = load("lb_key", "");
+  var wheelItems = [];
+  var rotation = 0;
+  var spinning = false;
+  var stubNo = 0;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function load(k, def){
+    try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
+    catch(e){ return def; }
+  }
+  function save(k, v){
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+  }
+
+  /* ---------------- CSV ---------------- */
+  function parseCSV(text){
+    text = text.replace(/^\uFEFF/, "");
+    var rows = [], row = [], field = "", q = false, i, c;
+    for(i = 0; i < text.length; i++){
+      c = text[i];
+      if(q){
+        if(c === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else { q = false; } }
+        else field += c;
+      } else if(c === '"'){ q = true; }
+      else if(c === ","){ row.push(field); field = ""; }
+      else if(c === "\n"){ row.push(field); rows.push(row); row = []; field = ""; }
+      else if(c !== "\r"){ field += c; }
+    }
+    if(field.length || row.length){ row.push(field); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(x){ return x.trim() !== ""; }); });
+  }
+
+  function fromCSV(text){
+    var rows = parseCSV(text);
+    if(!rows.length) return [];
+
+    // El export de listas trae primero los datos de la lista
+    // (Date,Name,Tags,URL,Description) y después la tabla de películas
+    // (Position,Name,Year,URL,Description). Buscamos la cabecera que tenga
+    // título y año juntos; si no hay ninguna, usamos la primera fila.
+    var h = 0, iName = -1, iYear = -1, iUri = -1, head;
+    for(var k = 0; k < rows.length; k++){
+      head = rows[k].map(function(x){ return x.trim().toLowerCase(); });
+      var n = find(head, ["name","title","film","película","pelicula"]);
+      var y = find(head, ["year","año","ano"]);
+      if(n >= 0 && y >= 0){ h = k; iName = n; iYear = y; break; }
+    }
+    if(iName < 0){
+      head = rows[0].map(function(x){ return x.trim().toLowerCase(); });
+      iName = find(head, ["name","title","film","película","pelicula"]);
+      iYear = find(head, ["year","año","ano"]);
+      h = 0;
+    }
+    if(iName < 0) return [];
+    head = rows[h].map(function(x){ return x.trim().toLowerCase(); });
+    iUri = find(head, ["url","letterboxd uri","uri","letterboxduri","link"]);
+
+    var out = [];
+    for(var r = h + 1; r < rows.length; r++){
+      var t = (rows[r][iName] || "").trim();
+      if(!t) continue;
+      out.push({
+        title: t,
+        year: iYear >= 0 ? (rows[r][iYear] || "").trim() : "",
+        uri:  iUri  >= 0 ? (rows[r][iUri]  || "").trim() : ""
+      });
+    }
+    return out;
+  }
+
+  function find(head, names){
+    for(var i = 0; i < names.length; i++){
+      var k = head.indexOf(names[i]);
+      if(k >= 0) return k;
+    }
+    return -1;
+  }
+
+  function fromLines(text){
+    return text.split("\n").map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+      var m = l.match(/^(.*?)[,;]\s*(19\d{2}|20\d{2})\s*$/) || l.match(/^(.*?)\s*\((19\d{2}|20\d{2})\)\s*$/);
+      return m ? { title: m[1].trim(), year: m[2], uri: "" } : { title: l, year: "", uri: "" };
+    });
+  }
+
+  function setMovies(list, label){
+    var keyset = {};
+    movies = list.filter(function(m){
+      var k = (m.title + "|" + m.year).toLowerCase();
+      if(keyset[k]) return false;
+      keyset[k] = 1; return true;
+    });
+    if(!movies.length){
+      note("No encontré títulos en ese archivo. Usá el CSV que exporta Letterboxd, o pegá los títulos a mano.");
+      return;
+    }
+    note(movies.length + " películas leídas de " + label + ".");
+    $("spin").disabled = false;
+    $("booth").open = false;
+    msg("");
+    updateTally();
+    buildWheel();
+  }
+
+  function pool(){
+    if(!$("noRepeat").checked) return movies.slice();
+    var s = {};
+    seen.forEach(function(k){ s[k] = 1; });
+    return movies.filter(function(m){ return !s[key(m)]; });
+  }
+  function key(m){ return (m.title + "|" + m.year).toLowerCase(); }
+
+  function updateTally(){
+    if(!movies.length){ $("tally").textContent = "Sin lista cargada"; return; }
+    var left = pool().length;
+    $("tally").innerHTML = "<b>" + movies.length + "</b> en la lista · <b>" + left + "</b> sin ver salir";
+  }
+
+  /* ---------------- rueda ---------------- */
+  var cvs = $("wheel"), ctx = cvs.getContext("2d");
+
+  function shuffle(a){
+    a = a.slice();
+    for(var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function buildWheel(){
+    var p = pool();
+    wheelItems = p.length <= SEG_MAX ? shuffle(p) : shuffle(p).slice(0, SEG_MAX);
+    drawWheel();
+  }
+
+  function drawWheel(){
+    var n = wheelItems.length, R = cvs.width / 2, cx = R, cy = R;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
+
+    if(!n){
+      ctx.restore();
+      ctx.fillStyle = "#521220";
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
+
+    var seg = Math.PI * 2 / n;
+    for(var i = 0; i < n; i++){
+      var a0 = i * seg;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, R, a0, a0 + seg);
+      ctx.closePath();
+      ctx.fillStyle = (i % 2 === 0) ? "#7A1B2B" : "#521220";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(240,180,41,.35)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.rotate(a0 + seg / 2);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#F4E9D7";
+      ctx.font = "500 " + (n > 10 ? 26 : 30) + "px Oswald, 'Arial Narrow', sans-serif";
+      ctx.fillText(clip(wheelItems[i].title, n > 10 ? 20 : 24), R - 44, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function clip(s, max){ return s.length > max ? s.slice(0, max - 1).trim() + "…" : s; }
+
+  // bombitas de marquesina
+  (function bulbs(){
+    var box = $("bulbs"), n = 28, html = "";
+    for(var i = 0; i < n; i++){
+      var a = i / n * 360;
+      html += '<span class="bulb" style="transform:rotate(' + a + 'deg) translateY(-50%) translateY(' +
+              '-0px) rotate(' + (-a) + 'deg);left:50%;top:50%;margin:-4.5px;' +
+              'transform:rotate(' + a + 'deg) translate(0, calc(-50% - 0px));' +
+              'animation-delay:' + (i * 0.035).toFixed(3) + 's"></span>';
+    }
+    box.innerHTML = html;
+    // posicionar con trigonometría para no depender de porcentajes
+    var els = box.querySelectorAll(".bulb");
+    function place(){
+      var r = box.clientWidth / 2 - 6;
+      for(var i = 0; i < els.length; i++){
+        var a = i / els.length * Math.PI * 2 - Math.PI / 2;
+        els[i].style.transform = "translate(" + (Math.cos(a) * r).toFixed(1) + "px," + (Math.sin(a) * r).toFixed(1) + "px)";
+      }
+    }
+    place();
+    window.addEventListener("resize", place);
+  })();
+
+  function spin(){
+    if(spinning) return;
+    var p = pool();
+    if(!movies.length){ msg("Primero cargá una lista en la taquilla."); return; }
+    if(!p.length){ msg("Ya salieron todas. Reiniciá las descartadas para volver a empezar."); return; }
+
+    buildWheel();
+    var n = wheelItems.length;
+    var target = Math.floor(Math.random() * n);
+    var seg = Math.PI * 2 / n;
+    var slow = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var turns = slow ? 1 : 5 + Math.floor(Math.random() * 3);
+    var from = rotation % (Math.PI * 2);
+    var to = turns * Math.PI * 2 - Math.PI / 2 - (target * seg + seg / 2);
+    while(to < from) to += Math.PI * 2;
+
+    var dur = slow ? 500 : 4200, t0 = performance.now();
+    spinning = true;
+    $("spin").disabled = true;
+    $("holder").classList.add("spinning");
+    $("ticket").hidden = true;
+    msg("");
+
+    function frame(t){
+      var k = Math.min(1, (t - t0) / dur);
+      var e = 1 - Math.pow(1 - k, 4);
+      rotation = from + (to - from) * e;
+      drawWheel();
+      if(k < 1) requestAnimationFrame(frame);
+      else {
+        spinning = false;
+        $("spin").disabled = false;
+        $("holder").classList.remove("spinning");
+        show(wheelItems[target]);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------------- resultado ---------------- */
+  var current = null;
+
+  function show(m){
+    current = m;
+    stubNo++;
+    $("stubNo").textContent = stubNo;
+    $("title").textContent = m.title;
+    $("year").textContent = m.year || "";
+    $("fallback").textContent = m.title;
+    $("fallback").style.display = "grid";
+    var old = $("art").querySelector("img");
+    if(old) old.remove();
+
+    if(m.uri){ $("lbLink").href = m.uri; $("lbLink").hidden = false; }
+    else { $("lbLink").hidden = true; }
+
+    $("ticket").hidden = false;
+    $("ticket").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    poster(m);
+  }
+
+  function poster(m){
+    if(!apiKey) return;
+    var ck = key(m);
+    if(posterCache[ck]){ paint(posterCache[ck], m); return; }
+    var url = "https://api.themoviedb.org/3/search/movie?api_key=" + encodeURIComponent(apiKey) +
+              "&query=" + encodeURIComponent(m.title) + (m.year ? "&year=" + encodeURIComponent(m.year) : "") +
+              "&include_adult=false";
+    fetch(url).then(function(r){
+      if(!r.ok) throw new Error("TMDB " + r.status);
+      return r.json();
+    }).then(function(d){
+      var hit = (d.results || [])[0];
+      if(!hit || !hit.poster_path) return;
+      var src = "https://image.tmdb.org/t/p/w500" + hit.poster_path;
+      posterCache[ck] = { src: src, year: (hit.release_date || "").slice(0, 4) };
+      save("lb_posters", posterCache);
+      paint(posterCache[ck], m);
+    }).catch(function(e){
+      msg("No pude traer la carátula (" + e.message + "). Revisá la clave de TMDB o tu conexión.");
+    });
+  }
+
+  function paint(entry, m){
+    if(current !== m) return;
+    if(!m.year && entry.year){ m.year = entry.year; $("year").textContent = entry.year; }
+    var img = new Image();
+    img.alt = "Carátula de " + m.title;
+    img.onload = function(){
+      if(current !== m) return;
+      $("fallback").style.display = "none";
+      $("art").appendChild(img);
+    };
+    img.src = entry.src;
+  }
+
+  function msg(t){ $("msg").textContent = t; }
+  function note(t){ $("loadNote").textContent = t; }
+
+  /* ---------------- eventos ---------------- */
+  $("pick").addEventListener("click", function(){ $("file").click(); });
+  $("file").addEventListener("change", function(e){
+    var f = e.target.files[0];
+    if(f) read(f);
+  });
+
+  var drop = $("drop");
+  ["dragenter","dragover"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add("hot"); });
+  });
+  ["dragleave","drop"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove("hot"); });
+  });
+  drop.addEventListener("drop", function(e){
+    var f = e.dataTransfer.files[0];
+    if(f) read(f);
+  });
+
+  function read(f){
+    var fr = new FileReader();
+    fr.onload = function(){
+      var list = fromCSV(String(fr.result));
+      if(!list.length) list = fromLines(String(fr.result));
+      setMovies(list, f.name);
+    };
+    fr.onerror = function(){ note("No pude leer el archivo. Probá de nuevo."); };
+    fr.readAsText(f);
+  }
+
+  $("usePaste").addEventListener("click", function(){
+    var t = $("paste").value.trim();
+    if(!t){ note("Escribí al menos un título."); return; }
+    setMovies(fromLines(t), "los títulos pegados");
+  });
+
+  $("tmdb").value = apiKey;
+  $("keyNote").textContent = apiKey ? "Clave guardada." : "Sin clave: la ruleta funciona igual, pero sin carátulas.";
+  $("saveKey").addEventListener("click", function(){
+    apiKey = $("tmdb").value.trim();
+    save("lb_key", apiKey);
+    $("keyNote").textContent = apiKey ? "Clave guardada." : "Clave vacía: sin carátulas.";
+    if(current) poster(current);
+  });
+  $("clearKey").addEventListener("click", function(){
+    apiKey = ""; $("tmdb").value = ""; save("lb_key", "");
+    $("keyNote").textContent = "Clave borrada.";
+  });
+
+  $("noRepeat").addEventListener("change", function(){ updateTally(); buildWheel(); });
+  $("resetSeen").addEventListener("click", function(){
+    seen = []; save("lb_seen", seen); updateTally(); buildWheel();
+    msg("Volvieron todas a la ruleta.");
+  });
+
+  $("spin").addEventListener("click", spin);
+  $("again").addEventListener("click", spin);
+  $("discard").addEventListener("click", function(){
+    if(!current) return;
+    if(seen.indexOf(key(current)) < 0){ seen.push(key(current)); save("lb_seen", seen); }
+    updateTally();
+    spin();
+  });
+
+  drawWheel();
+  updateTally();
+})();
+</script>
+</body>
+</html>
