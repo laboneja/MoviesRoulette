@@ -34,6 +34,50 @@
   }
   .wrap{max-width:1160px;margin:0 auto;padding:28px 20px 64px}
 
+  /* ---------- créditos del creador ---------- */
+  .creator-bar{
+    display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;
+    margin:0 0 14px;
+    font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cream-dim);
+  }
+  .creator-bar a, .credits a{
+    color:var(--bulb);font-weight:500;text-decoration:none;
+    border-bottom:1px solid rgba(240,180,41,.45);padding-bottom:1px;
+  }
+  .creator-bar a:hover, .credits a:hover{color:#F5C24B;border-bottom-color:#F5C24B}
+  .creator-bar .dot{color:var(--bulb-dim)}
+  .credits{
+    margin-top:30px;padding-top:22px;border-top:1px dashed rgba(244,233,215,.16);
+    text-align:center;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--cream-dim);
+  }
+  .credits strong{font-weight:500;color:var(--cream)}
+  .credits .sub-credit{display:block;margin-top:6px;font-family:"Spectral",serif;font-size:12px;letter-spacing:0;text-transform:none;color:rgba(244,233,215,.45)}
+
+  /* ---------- listas de ejemplo ---------- */
+  .samples{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(244,233,215,.14)}
+  .samples label.lbl{
+    display:block;margin-bottom:8px;
+    font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream-dim);
+  }
+  .samples .pick-row{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+  .select-wrap{position:relative;flex:1 1 280px;min-width:0}
+  .select-wrap::after{
+    content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;margin-top:-6px;
+    border-right:2px solid var(--bulb);border-bottom:2px solid var(--bulb);
+    transform:rotate(45deg);pointer-events:none;
+  }
+  select#sampleList{
+    width:100%;height:100%;min-height:42px;appearance:none;-webkit-appearance:none;
+    background:rgba(0,0,0,.35);color:var(--cream);
+    border:1px solid rgba(244,233,215,.25);border-radius:var(--radius);
+    padding:10px 38px 10px 12px;font-family:"Spectral",serif;font-size:15px;cursor:pointer;
+  }
+  select#sampleList option{background:#1B0E13;color:var(--cream)}
+  select#sampleList:hover{border-color:rgba(240,180,41,.55)}
+  .samples .btn[disabled]{opacity:.5;cursor:wait}
+
   /* ---------- marquesina ---------- */
   header.marquee{
     border:2px solid var(--bulb-dim);
@@ -644,6 +688,13 @@
 </svg>
 <div class="wrap">
 
+  <div class="creator-bar">
+    <span>Creado por</span>
+    <a href="https://letterboxd.com/laboneja/" target="_blank" rel="noopener">laboneja</a>
+    <span class="dot">·</span>
+    <a href="https://letterboxd.com/laboneja/" target="_blank" rel="noopener">Mi perfil en Letterboxd ↗</a>
+  </div>
+
   <header class="marquee">
     <h1>Función al azar<span>ruleta de películas</span></h1>
     <div class="tally" id="tally">Sin lista cargada</div>
@@ -660,6 +711,19 @@
             <button class="btn" id="pick">Elegir archivo CSV</button>
             <input type="file" id="file" accept=".csv,text/csv">
             <small>o arrastrá el CSV acá</small>
+          </div>
+          <div class="samples">
+            <label class="lbl" for="sampleList">O probá con una lista de ejemplo</label>
+            <div class="pick-row">
+              <div class="select-wrap">
+                <select id="sampleList">
+                  <option value="https://raw.githubusercontent.com/laboneja/MoviesRoulette/refs/heads/main/lists/letterboxds-top-500-films.csv" data-name="Letterboxd’s Top 500 Films">Letterboxd’s Top 500 Films</option>
+                  <option value="https://raw.githubusercontent.com/laboneja/MoviesRoulette/refs/heads/main/lists/top-250-films-of-the-1990s.csv" data-name="Top 250 Films of the 1990s">Top 250 Films of the 1990s</option>
+                  <option value="https://raw.githubusercontent.com/laboneja/MoviesRoulette/refs/heads/main/lists/top-250-horror-films.csv" data-name="Top 250 Horror Films">Top 250 Horror Films</option>
+                </select>
+              </div>
+              <button class="btn" id="loadSample" type="button">Cargar lista ejemplo</button>
+            </div>
           </div>
           <div class="row"><span class="note" id="loadNote">Acepta el export de listas, watchlist o diario.</span></div>
         </li>
@@ -745,6 +809,12 @@
 
   <p class="msg" id="msg"></p>
 
+  <div class="credits">
+    Hecho por <strong>laboneja</strong> ·
+    <a href="https://letterboxd.com/laboneja/" target="_blank" rel="noopener">letterboxd.com/laboneja ↗</a>
+    <span class="sub-credit">Listas de ejemplo en <a href="https://github.com/laboneja/MoviesRoulette" target="_blank" rel="noopener">github.com/laboneja/MoviesRoulette</a></span>
+  </div>
+
   <footer>Datos de las películas por TMDB. Este proyecto no está asociado a TMDB ni a Letterboxd.</footer>
 </div>
 
@@ -760,7 +830,7 @@
   // Aviso: al estar dentro del HTML, cualquiera que abra el archivo puede verlas.
   var apiKeys = [
     "cf15aa595bd53e2061ee1b1cc42192b0",
-    "TU_API_KEY_2",
+    "0415f6d97447d19b189cdb5eadb145f7",
     "TU_API_KEY_3"
   ].map(function(k){ return k.trim(); }).filter(function(k){
     return k && k.indexOf("TU_API_KEY_") !== 0;
@@ -1145,6 +1215,26 @@
     fr.onerror = function(){ note("No pude leer el archivo. Probá de nuevo."); };
     fr.readAsText(f);
   }
+
+  $("loadSample").addEventListener("click", function(){
+    var sel = $("sampleList"), btn = $("loadSample");
+    var opt = sel.options[sel.selectedIndex];
+    var name = opt.getAttribute("data-name") || opt.text;
+    btn.disabled = true;
+    note("Cargando “" + name + "”…");
+    fetch(opt.value).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    }).then(function(text){
+      var list = fromCSV(text);
+      if(!list.length) list = fromLines(text);
+      setMovies(list, "“" + name + "”");
+    }).catch(function(e){
+      note("No pude cargar la lista (" + e.message + "). Revisá tu conexión e intentá de nuevo.");
+    }).then(function(){
+      btn.disabled = false;
+    });
+  });
 
   $("usePaste").addEventListener("click", function(){
     var t = $("paste").value.trim();
